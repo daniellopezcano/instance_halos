@@ -16,19 +16,23 @@ The code is organized as follows:
     - After cloning the huggingface repositiores (see installation instructions below) the folder named `instance_halos_data` will contain .npy files used as example inputs for the networks (also the ground truth predictions). The `instance_halos_models` folder will contain the semantic and instance models stored in a format compatible with tensorflow.
 	
 ## installation modules
-
+```bash
 conda create -n VE_IHs python=3.8
 conda activate VE_IHs
 conda install -c anaconda tensorflow-gpu
 conda install jupyter numpy scipy matplotlib networkx cython ipykernel
-git clone git@github.com:daniellopezcano/instance_halos.git
+git clone --recursive git@github.com:daniellopezcano/instance_halos.git
 cd instance_halos
 pip install -e .
-git clone https://huggingface.co/datasets/kosmikakapo/instance_halos_data
-git clone https://huggingface.co/kosmikakapo/instance_halos_models
+```
+If the main repository is cloned without the --recursive flag, the submodules can be fetched by running:
+```bash
+git submodule update --init --recursive
+```
 
 #### profiling
 To see the log put:
-
+```python
 import logging
 logging.getLogger().setLevel(logging.DEBUG)
+```
