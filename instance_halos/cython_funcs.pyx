@@ -2,6 +2,8 @@
 import numpy as np
 cimport numpy as np
 
+np.import_array()
+
 # Declare the function with types for better performance
 cpdef np.ndarray[double] double_elements_cython(np.ndarray[double] arr):
     # Create a new array to store the results

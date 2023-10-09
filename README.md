@@ -20,7 +20,8 @@ The code is organized as follows:
 conda create -n VE_IHs python=3.8
 conda activate VE_IHs
 conda install -c anaconda tensorflow-gpu
-conda install jupyter numpy scipy matplotlib networkx cython ipykernel
+conda install jupyter scipy matplotlib networkx cython ipykernel
+conda install numpy=1.19
 git clone --recursive git@github.com:daniellopezcano/instance_halos.git
 cd instance_halos
 pip install -e .
