@@ -14,13 +14,13 @@ The code is organized as follows:
     - The `utils_modules` folder contains the codes employed to load the dataset and the model. It also includes the codes employed for performing the pseudo-space clsutering, generate the model predictions, and carry out statistical analysis and plots.
     - The `example` folder contains an example Jupyter notebook (`example.ipynb`) to see how the models are able to generate predictions and plots similar to those presented in the paper.
     - After cloning the huggingface repositiores (see installation instructions below) the folder named `instance_halos_data` will contain .npy files used as example inputs for the networks (also the ground truth predictions). The `instance_halos_models` folder will contain the semantic and instance models stored in a format compatible with tensorflow.
-	
+
 ## installation modules
 ```bash
-conda create -n VE_IHs python=3.8
+conda create -n VE_IHs
 conda activate VE_IHs
 conda install -c anaconda tensorflow-gpu
-conda install jupyter scipy matplotlib networkx cython ipykernel
+conda install jupyter scipy matplotlib networkx cython
 conda install numpy=1.19
 git clone --recursive git@github.com:daniellopezcano/instance_halos.git
 cd instance_halos
