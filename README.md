@@ -17,7 +17,7 @@ The code is organized as follows:
 	
 ## installation modules
 ```bash
-conda create -n VE_IHs
+conda create -n VE_IHs python=3.8
 conda activate VE_IHs
 conda install -c anaconda tensorflow-gpu
 conda install jupyter numpy scipy matplotlib networkx cython ipykernel
