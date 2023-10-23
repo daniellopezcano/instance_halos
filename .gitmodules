@@ -1,6 +1,0 @@
-[submodule "instance_halos_data"]
-	path = instance_halos_data
-	url = https://huggingface.co/datasets/kosmikakapo/instance_halos_data
-[submodule "instance_halos_models"]
-	path = instance_halos_models
-	url = https://huggingface.co/kosmikakapo/instance_halos_models
