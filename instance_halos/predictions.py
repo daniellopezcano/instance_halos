@@ -135,11 +135,11 @@ def reduce_labeling(data):
 @functools.lru_cache(maxsize=2)
 def load_model(model_name):
     if model_name in ("semantic_v1.0", "semantic_v1.0_only_density", "semantic_v1.0_only_potential"):
-        model = tf.keras.models.load_model("%s/models/%s.keras" % (basedir, model_name))
+        model = tf.keras.models.load_model("%s/instance_halos_models/%s.keras" % (basedir, model_name))
         config = dict(ngrid_suggest=64)
         return model, config
     if model_name in ("instance_v1.0", "instance_v1.0_only_density", "instance_v1.0_only_potential", "instance_v1.1_only_potential"):
-        model = tf.keras.models.load_model("%s/models/%s.keras" % (basedir, model_name))
+        model = tf.keras.models.load_model("%s/instance_halos_models/%s.keras" % (basedir, model_name))
         config = dict(ngrid_suggest=64, sem_thresh=0.589, combine_thresh=0.5, append_lag_pos=True, include_semantic_as_model_input=False)
         return model, config
     else:

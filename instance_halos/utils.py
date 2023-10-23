@@ -638,16 +638,15 @@ def violin_plot(
     pred_array,
     vmin_mass=11.052,
     vmax_mass=14.68,
-    N_bins = 19
-):
-    violin_chaos = np.load(os.path.join('../data/violin_chaos.npy'))
-    
+    N_bins = 19,
+    fontsize1=17
+):    
     if vmin_mass == None:
         vmin_mass = np.min([np.nanmin(true_mass), np.nanmin(pred_mass)])
     if vmax_mass == None:
         vmax_mass = np.max([np.nanmax(true_mass), np.nanmax(pred_mass)])
     
-    bins_edges = np.linspace(min_bin, max_bin, num=N_bins+1, endpoint=True)
+    bins_edges = np.linspace(vmin_mass, vmax_mass, num=N_bins+1, endpoint=True)
 
     N_sample = int(1.*len(pred_array))
     index = np.random.choice(len(true_array), N_sample, replace=False)
@@ -660,7 +659,7 @@ def violin_plot(
     XX = XX[mask]
     YY = YY[mask]
 
-    tmp_mask = (min_bin < XX) & (XX < max_bin)
+    tmp_mask = (vmin_mass < XX) & (XX < vmax_mass)
     XX = XX[tmp_mask]
     YY = YY[tmp_mask]
 
@@ -671,10 +670,10 @@ def violin_plot(
 
     ax.set_xlabel(r'$\log_{10}M_\mathrm{Truth}\; [\mathrm{h}^{-1} M_\odot]$', fontsize=16)
     ax.set_ylabel(r'$\log_{10}M_\mathrm{Pred}\; [\mathrm{h}^{-1} M_\odot]$', fontsize=16)
-    ax.set_xlim([min_bin, max_bin])
+    ax.set_xlim([vmin_mass, vmax_mass])
     ax.set_ylim([10, 15])
 
-    tmp_xx = np.linspace(min_bin, max_bin, 100)
+    tmp_xx = np.linspace(vmin_mass, vmax_mass, 100)
     ax.plot(tmp_xx, tmp_xx, c='k')
 
     xx_violin = []
@@ -717,13 +716,14 @@ def violin_plot(
 
     ax.scatter(XX_median, YY_median, s=50, c='k')
     
-#     for ii in range(len(violin_chaos)):
-#         ax.plot(
-#             violin_chaos[ii,:,0],
-#             violin_chaos[ii,:,1],
-#             c='limegreen',
-#             ls='-', lw=2
-#         )
+    # violin_chaos = np.load(os.path.join('../data/violin_chaos.npy'))
+    # for ii in range(len(violin_chaos)):
+        # ax.plot(
+            # violin_chaos[ii,:,0],
+            # violin_chaos[ii,:,1],
+            # c='limegreen',
+            # ls='-', lw=2
+        # )
     
     # legend lines hist plots
     custom_lines = [

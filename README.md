@@ -17,18 +17,16 @@ The code is organized as follows:
 
 ## installation modules
 ```bash
-conda create -n VE_IHs
+conda create --name VE_IHs python=3.8
 conda activate VE_IHs
 conda install -c anaconda tensorflow-gpu
-conda install jupyter scipy matplotlib networkx cython
-conda install numpy=1.19
+pip install matplotlib scipy networkx cython jupyter gdown
+pip install numpy==1.23.5
 git clone --recursive git@github.com:daniellopezcano/instance_halos.git
 cd instance_halos
 pip install -e .
-```
-If the main repository is cloned without the --recursive flag, the submodules can be fetched by running:
-```bash
-git submodule update --init --recursive
+gdown --folder https://drive.google.com/drive/folders/1MIG_km7KiSP5a75KtRaIeu6U5DcHuIyN?usp=drive_link
+gdown --folder https://drive.google.com/drive/folders/1YP3wtWEX_4mZPr1N2erRW8OfHU7nmkfW?usp=share_link
 ```
 
 #### profiling
