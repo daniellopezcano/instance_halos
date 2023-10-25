@@ -43,7 +43,6 @@ def tide(lx,ly,lz, q0=np.array((25.,25.,25.)), Np=256, L=50.):
     T = np.diag((lx,ly,lz))
     return np.einsum("...i,ij,...j", q-q0, T, q-q0)
     
-    
 def semantic_predictions_metrics_vs_thresholds(
     truth,
     semantic,
@@ -789,4 +788,73 @@ def plot_HMF(xx_true, yy_true, xx_pred, yy_pred):
 
     fig.tight_layout()
     
+    return fig
+    
+    
+def plot_experiments(
+    experiments_mass,
+    ii_slice = 180,
+    size_plot=12,
+    fontsize=52,
+    fontsize1=42,
+    cbar_width = 1.,
+    cbar_height = 0.02,
+    spacing = 0.01,
+    vmin_mass = 11.,
+    vmax_mass = 14.5,
+    FoV = 256
+):
+
+    tmp_slice = slice(int(experiments_mass[0].shape[0]/2 - FoV/2), int(experiments_mass[0].shape[0]/2 + FoV/2))
+    custom_ticks = np.linspace(0, FoV, 5)[1:-1]
+    custom_labels = np.linspace(int(experiments_mass[0].shape[0]/2 - FoV/2), int(experiments_mass[0].shape[0]/2 + FoV/2),5)[1:-1].astype(int).astype(str)
+    
+    nrows = len(list(experiments_mass.keys()))
+    ncols = 1
+    
+    # Create the GridSpec with space for colorbars on the first row
+    gs = mpl.gridspec.GridSpec(nrows, ncols)
+    fig = mpl.pyplot.figure(figsize=(ncols*size_plot+3, nrows*size_plot))
+    
+    for ii, ii_key in enumerate(experiments_mass.keys()):
+    
+        ax = fig.add_subplot(gs[ii, 0])
+        tmp_imshow = experiments_mass[ii_key][ii_slice][tmp_slice, tmp_slice]
+        
+        alpha = np.zeros(tmp_imshow.shape); alpha[tmp_imshow!=0]=1
+        cb = ax.imshow(tmp_imshow, alpha=alpha, cmap='jet', vmin=vmin_mass, vmax=vmax_mass)
+        for axis in ['top','bottom','left','right']:
+            ax.spines[axis].set_linewidth(4)
+        ax.set_xticks([])
+        ax.set_yticks([])
+        ax.set_ylabel(r'y position $\left[ \mathrm{h}^{-1}\mathrm{Mpc} \right]$', size=fontsize, labelpad=12.)
+        ax.set_yticks(custom_ticks)
+        ax.set_yticklabels(custom_labels, minor=False, rotation=0, fontsize=fontsize)
+        ax.yaxis.set_tick_params(width=2, length=12.)
+        
+        if ii == 0:
+    
+            cax_x = ax.get_position().x0 + (ax.get_position().width * (1 - cbar_width) / 2)
+            cax_width = ax.get_position().width * cbar_width
+            cax = fig.add_axes([cax_x, ax.get_position().y1 + spacing, cax_width, cbar_height])
+            tmp_custom_ticks = np.linspace(11., 14., 4)
+            tmp_custom_labels = np.around(tmp_custom_ticks, 2).astype(str)
+            cb = mpl.pyplot.colorbar(cb, cax=cax, orientation='horizontal', ticks=tmp_custom_ticks)
+            cb.ax.xaxis.tick_top()
+            cb.ax.set_xticks(tmp_custom_ticks)
+            cb.ax.set_xticklabels(tmp_custom_labels, fontsize=fontsize1, color='k', rotation=0)
+            cb.ax.tick_params(axis="x", pad=1, color='k')
+            cb.outline.set_edgecolor(color='k')
+            cb.outline.set_linewidth(2)
+            cb.ax.set_title(r'$\log_{10}M \; [\mathrm{h}^{-1} M_\odot]$', fontsize=fontsize, pad=18.)
+            cb.ax.tick_params(length=12)
+    
+    for tmp_ax in [ax]:
+        tmp_ax.set_xlabel(r'x position $\left[ \mathrm{h}^{-1}\mathrm{Mpc} \right]$', size=fontsize, labelpad=12.)
+        tmp_ax.set_xticks(custom_ticks)
+        tmp_ax.set_xticklabels(custom_labels, minor=False, rotation=0, fontsize=fontsize)
+        tmp_ax.xaxis.set_tick_params(width=2, length=12.)
+    
+    mpl.pyplot.subplots_adjust(wspace=0.07, hspace=0.07)
+
     return fig
