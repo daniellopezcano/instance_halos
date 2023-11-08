@@ -41,7 +41,7 @@ def uniform_grid_nd(npix, L=1., endpoint=False):
 def tide(lx,ly,lz, q0=np.array((25.,25.,25.)), Np=256, L=50.):
     q = uniform_grid_nd((Np,Np,Np), L=L)
     T = np.diag((lx,ly,lz))
-    return np.einsum("...i,ij,...j", q-q0, T, q-q0)
+    return np.einsum("...i,ij,...j", q-q0, T, q-q0)/2
     
 def semantic_predictions_metrics_vs_thresholds(
     truth,
@@ -822,12 +822,12 @@ def plot_experiments(
         tmp_imshow = experiments_mass[ii_key][ii_slice][tmp_slice, tmp_slice]
         
         alpha = np.zeros(tmp_imshow.shape); alpha[tmp_imshow!=0]=1
-        cb = ax.imshow(tmp_imshow, alpha=alpha, cmap='jet', vmin=vmin_mass, vmax=vmax_mass)
+        cb = ax.imshow(tmp_imshow.T, origin="lower", alpha=alpha.T, cmap='jet', vmin=vmin_mass, vmax=vmax_mass)
         for axis in ['top','bottom','left','right']:
             ax.spines[axis].set_linewidth(4)
         ax.set_xticks([])
         ax.set_yticks([])
-        ax.set_ylabel(r'y position $\left[ \mathrm{h}^{-1}\mathrm{Mpc} \right]$', size=fontsize, labelpad=12.)
+        ax.set_ylabel(r'z position $\left[ \mathrm{h}^{-1}\mathrm{Mpc} \right]$', size=fontsize, labelpad=12.)
         ax.set_yticks(custom_ticks)
         ax.set_yticklabels(custom_labels, minor=False, rotation=0, fontsize=fontsize)
         ax.yaxis.set_tick_params(width=2, length=12.)
@@ -850,7 +850,7 @@ def plot_experiments(
             cb.ax.tick_params(length=12)
     
     for tmp_ax in [ax]:
-        tmp_ax.set_xlabel(r'x position $\left[ \mathrm{h}^{-1}\mathrm{Mpc} \right]$', size=fontsize, labelpad=12.)
+        tmp_ax.set_xlabel(r'y position $\left[ \mathrm{h}^{-1}\mathrm{Mpc} \right]$', size=fontsize, labelpad=12.)
         tmp_ax.set_xticks(custom_ticks)
         tmp_ax.set_xticklabels(custom_labels, minor=False, rotation=0, fontsize=fontsize)
         tmp_ax.xaxis.set_tick_params(width=2, length=12.)

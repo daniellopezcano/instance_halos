@@ -46,7 +46,7 @@ def sph_density(x, k=20, kernel="tophat", nthreads=8, get_neighbors=False):
 
 from .cython_funcs import group_particles_descending
 
-def meshfree_descending_clustering(x, kdens=20, klink=15, min_pers_ratio=4., kernel="tophat", full_output=False, nthreads=8):
+def meshfree_descending_clustering(x, kdens=20, klink=15, min_pers_ratio=4.2, kernel="tophat", full_output=False, nthreads=8):
     """More or less implements the density clustering of subfind (arXiv:0012055),
     but assigns not only the levelset, but the whole descending manifold"""
     assert kdens >= klink
