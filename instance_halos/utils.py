@@ -24,12 +24,16 @@ def compute_log10mass_map_from_label_map(label_map, mp=6.350795014316703*1e8):
     log10mass_map[label_map == 0] = np.NaN
     return log10mass_map
 
-def compute_HMF(M_halos, volume=50**3, mp=6.350795014316703*1e8, bins=20):
+def compute_HMF(M_halos, volume=50**3, mp=6.350795014316703*1e8, bins=20, min=np.log(10**11.0), max=np.log(10**15.)):
     M_halos = M_halos[M_halos > mp]
     tmp_x = np.log(M_halos)
-    counts, bin_edges = np.histogram(tmp_x, bins=bins, range=(min(tmp_x), max(tmp_x)))
+    
+    if min==None: min=np.min(tmp_x)
+    if max==None: max=np.max(tmp_x)
+    
+    counts, bin_edges = np.histogram(tmp_x, bins=bins, range=(min, max))
     bin_centers = (bin_edges[1:] + bin_edges[:-1])/2
-    return np.exp(bin_centers), np.array(counts / np.diff(bin_edges) / volume)
+    return np.log10(np.exp(bin_centers)), np.log10(np.array(counts / np.diff(bin_edges) / volume))
 
 def uniform_grid_nd(npix, L=1., endpoint=False):
     assert len(np.shape(npix)) > 0, "Please give npix in form (npixx,npixy,..)"
@@ -244,7 +248,7 @@ def plot_semantic_metrics_vs_semantic_threshold(
     list_semantic_thresholds,
     semantic_metrics,
     true_collapsed_fraction,
-    chaos_metrics = {'TPR':.851, 'TNR':.876,'PPV': 845, 'ACC':.865, 'F1':.848},
+    chaos_metrics = {'TPR':.887, 'TNR':.914,'PPV': 882, 'ACC':.903, 'F1':.884},
     semantic_threshold = 0.589
 ):
     
@@ -489,14 +493,16 @@ def plot_semantic_map_predictions(
 def plot_TPR_vs_true_mass(mass_bins, TPR_vs_true_mass):
 
     mass_bins_chaos = np.array([11.11409091, 11.26227273, 11.41045455, 11.55863636, 11.70681818,
-           11.855     , 12.00318182, 12.15136364, 12.29954545, 12.44772727,
-           12.59590909, 12.74409091, 12.89227273, 13.04045455, 13.18863636,
-           13.33681818, 13.485     , 13.63318182, 13.78136364, 13.92954545])
+       11.855     , 12.00318182, 12.15136364, 12.29954545, 12.44772727,
+       12.59590909, 12.74409091, 12.89227273, 13.04045455, 13.18863636,
+       13.33681818, 13.485     , 13.63318182, 13.78136364, 13.92954545,
+       14.07772727, 14.22590909])
 
-    TPR_vs_true_mass_chaos = np.array([0.64304063, 0.73431407, 0.76433429, 0.78718199, 0.79941393,
-           0.81454905, 0.82463763, 0.83290299, 0.83523248, 0.85500805,
-           0.84132273, 0.84737829, 0.85905436, 0.85949268, 0.87111826,
-           0.8811147 , 0.88341884, 0.89374429, 0.91353507, 0.89488047])
+    TPR_vs_true_mass_chaos = np.array([0.73746777, 0.78422449, 0.81624534, 0.8301802 , 0.83600913,
+       0.84138568, 0.84957405, 0.86089855, 0.86481533, 0.86995947,
+       0.8712267 , 0.88179121, 0.89030832, 0.89032424, 0.90812362,
+       0.90079202, 0.90310466, 0.9092058 , 0.9228153 , 0.90007783,
+       0.92411626, 0.92229241])
 
     fig, ax = mpl.pyplot.subplots(1, 1, figsize=(8, 6))
     fontsize = 26
@@ -515,7 +521,7 @@ def plot_TPR_vs_true_mass(mass_bins, TPR_vs_true_mass):
         tick.set_pad(6.)
     ax.yaxis.set_major_locator(mpl.pyplot.MaxNLocator(5))
     ax.xaxis.set_major_locator(mpl.pyplot.MaxNLocator(6))
-    ax.set_ylim([0.6, 0.92])
+    ax.set_ylim([0.6, 0.94])
     ax.tick_params('both', length=5, width=2, which='major')
     [ii.set_linewidth(2) for ii in ax.spines.values()]
 
@@ -749,9 +755,10 @@ def plot_HMF(xx_true, yy_true, xx_pred, yy_pred):
     ax.set_ylabel(r'$\log_{10}\left( d\mathrm{n} / d\ln \mathrm{M} \right)$', size=30)
     ax.set_xlabel(r'$\log_{10}M \; [\mathrm{h}^{-1} \mathrm{M}_\odot]$', size=30)
 
-    ax.plot(np.log10(xx_true), np.log10(yy_true), lw=4, ls='-', alpha=0.9, c='k')
-    ax.plot(np.log10(xx_pred), np.log10(yy_pred), lw=4, ls='--', alpha=0.9, c='k')
-
+    ax.plot(xx_true, yy_true, lw=4, ls='-', alpha=0.9, c='k')
+    ax.plot(xx_pred, yy_pred, lw=4, ls='--', alpha=0.9, c='k')
+    
+    ax.axvline(12, ls=':', lw=1, c='k')
 
     for tick in ax.yaxis.get_major_ticks():
         tick.label.set_fontsize(fontsize)
@@ -759,8 +766,8 @@ def plot_HMF(xx_true, yy_true, xx_pred, yy_pred):
     for tick in ax.xaxis.get_major_ticks():
         tick.label.set_fontsize(fontsize)
         tick.set_pad(6.)
-    ax.set_ylim([-5.2, -2.])
-    ax.set_xlim([11.65, 14.75])
+    # ax.set_ylim([-5.2, -2.])
+    # ax.set_xlim([11.65, 14.75])
     ax.tick_params('both', length=5, width=2, which='major')
     [ii.set_linewidth(2) for ii in ax.spines.values()]
 
@@ -770,8 +777,8 @@ def plot_HMF(xx_true, yy_true, xx_pred, yy_pred):
         mpl.lines.Line2D([0], [0], color='k', ls='--', marker=None, lw=4, markersize=16),
     ]
     custom_labels = [
-        'Truth',
-        'Pred',
+        'Truth (simulations)',
+        'Pred (simulations)',
     ]
     legend = ax.legend(custom_lines, custom_labels, loc='upper right',fancybox=True, shadow=True, ncol=1,fontsize=fontsize1)
     ax.add_artist(legend)
@@ -781,8 +788,8 @@ def plot_HMF(xx_true, yy_true, xx_pred, yy_pred):
     ax.set_yticks(custom_ticks)
     ax.set_yticklabels(custom_labels, minor=False, rotation=0)
 
-    custom_ticks = np.linspace(11.8, 14.7, 3)
-    custom_labels = np.linspace(11.7, 14.7, 3).astype(str)
+    custom_ticks = np.linspace(11., 15., 5)
+    custom_labels = custom_ticks.astype(str)
     ax.set_xticks(custom_ticks)
     ax.set_xticklabels(custom_labels, minor=False, rotation=0)
 
@@ -857,4 +864,63 @@ def plot_experiments(
     
     mpl.pyplot.subplots_adjust(wspace=0.07, hspace=0.07)
 
+    return fig
+    
+    
+def plot_example_combination_lattices(
+    experiments,
+    ii_slice = 0,
+    size_plot=12,
+    fontsize=52,
+    fontsize1=42,
+    cbar_width = 1.,
+    cbar_height = 0.02,
+    spacing = 0.01,
+    FoV = 256
+):
+
+    tmp_slice = slice(int(experiments[0].shape[0]/2 - FoV/2), int(experiments[0].shape[0]/2 + FoV/2))
+    custom_ticks = np.linspace(0, FoV, 5)[1:-1]
+    custom_labels = np.linspace(int(experiments[0].shape[0]/2 - FoV/2), int(experiments[0].shape[0]/2 + FoV/2),5)[1:-1].astype(int).astype(str)
+    
+    nrows = len(list(experiments.keys()))
+    ncols = 1
+    
+    # Create the GridSpec with space for colorbars on the first row
+    gs = mpl.gridspec.GridSpec(nrows, ncols)
+    fig = mpl.pyplot.figure(figsize=(ncols*size_plot+3, nrows*size_plot))
+
+    list_titles = ['Lattice1', 'Lattice2', 'Combined']
+    grid_lines = [np.linspace(0, 256, 5)[1:-1]-1, np.linspace(0, 256, 5)[1:]-32, None]
+    for ii, ii_key in enumerate(experiments.keys()):
+        ax = fig.add_subplot(gs[ii, 0])
+        tmp_imshow = experiments[ii_key][ii_slice][tmp_slice, tmp_slice]
+        
+        alpha = np.zeros(tmp_imshow.shape); alpha[tmp_imshow!=0]=1
+        cb = ax.imshow(tmp_imshow%1337, alpha=alpha, cmap='prism')
+        for axis in ['top','bottom','left','right']:
+            ax.spines[axis].set_linewidth(4)
+        ax.set_xticks([])
+        ax.set_yticks([])
+        ax.set_ylabel(r'y position $\left[ \mathrm{h}^{-1}\mathrm{Mpc} \right]$', size=fontsize, labelpad=12.)
+        ax.set_yticks(custom_ticks)
+        ax.set_yticklabels(custom_labels, minor=False, rotation=0, fontsize=fontsize)
+        ax.yaxis.set_tick_params(width=2, length=12.)
+
+        ax.text(10, 20, list_titles[ii], style='italic', fontsize=42, color='black', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round',pad=.2))
+
+        ax.vlines(x=grid_lines[ii], ymin=0, ymax=256, colors='k', ls='--', lw=3)
+        ax.hlines(y=grid_lines[ii], xmin=0, xmax=256, colors='k', ls='--', lw=3)
+
+        ax.set_xlim([0, 256])
+        ax.set_ylim([256, 0])
+        
+    for tmp_ax in [ax]:
+        tmp_ax.set_xlabel(r'x position $\left[ \mathrm{h}^{-1}\mathrm{Mpc} \right]$', size=fontsize, labelpad=12.)
+        tmp_ax.set_xticks(custom_ticks)
+        tmp_ax.set_xticklabels(custom_labels, minor=False, rotation=0, fontsize=fontsize)
+        tmp_ax.xaxis.set_tick_params(width=2, length=12.)
+    
+    mpl.pyplot.subplots_adjust(wspace=0.07, hspace=0.07)
+    
     return fig

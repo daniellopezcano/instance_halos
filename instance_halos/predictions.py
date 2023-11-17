@@ -47,9 +47,43 @@ def limit_tensorflow_GPU_memory(GPU_percent_mem_use, GPU_total_memory=45556):
 # -------------------------------------------------------------------------------------------- #
 # ----------------------------------------- Data tools --------------------------------------- #
 # -------------------------------------------------------------------------------------------- #
+
+def periodic_crop_1d(field, i0, n, axis=0):
+    assert n <= field.shape[axis], ("crop %d bigger than domain %d not implemented" % (n, field.shape[axis]))
     
-def get_single_crop(data, crop_center, L_half_crop, crop_mask):
+    fs = []
     
+    i0 = i0 % field.shape[axis]
+    
+    for offset in 0, -field.shape[axis]:
+        left = np.clip(i0 + offset, 0, field.shape[axis])
+        right = np.clip(i0 + offset + n, 0, field.shape[axis])
+        
+        sl = []
+        for i in range(0, len(field.shape)):
+            if i == axis:
+                sl.append(slice(left, right))
+            else:
+                sl.append(slice(0, field.shape[i]))
+    
+        fs.append(field[tuple(sl)])
+    
+    return np.concatenate(fs, axis=axis)
+
+def periodic_crop(field, i0, n):
+    fcrop = field
+    
+    n = n * np.ones_like(i0)
+    
+    for i in range(0, len(i0)):
+        fcrop = periodic_crop_1d(fcrop, i0[i], n[i], axis=i)
+    
+    return fcrop
+
+def get_single_crop(data, crop_center, L_half_crop):
+    return periodic_crop(data, crop_center - L_half_crop, L_half_crop*2)
+
+def get_single_crop_old(data, crop_center, L_half_crop, crop_mask):
     roll = np.zeros(len(crop_center)).astype(np.int32)
     for ii in range(len(crop_center)):
         roll[ii] = -(crop_center[ii] - L_half_crop)
@@ -72,6 +106,7 @@ def get_crop_centers(LL, NN_crops_per_side, offset=None):
     return crop_centers
 
 def define_inputs_for_model(model, delta=None, potential=None, ngrid_out=64, offset=None, semantic=None, append_lag_pos=False, get_output_mask=None, include_semantic_as_input_field=True):
+    timer = Timer()
     
     if delta is not None:
         assert delta.shape[0] == delta.shape[1] == delta.shape[2]
@@ -82,38 +117,42 @@ def define_inputs_for_model(model, delta=None, potential=None, ngrid_out=64, off
         ngrid = potential.shape[0]
         assert ngrid % ngrid_out == 0, "shape of input (%d) has to be multiple of %d" % (potential.shape[0], ngrid_out)
     
-    crop_input_mask = (slice(0, model.input_shape[1]),)*3
-    crop_output_mask = (slice(0, model.output_shape[1]),)*3
+    # crop_input_mask = (slice(0, model.input_shape[1]),)*3
+    # crop_output_mask = (slice(0, model.output_shape[1]),)*3
     
     crop_centers = get_crop_centers(ngrid, ngrid // ngrid_out, offset=offset)
-    
     fields = []
     if delta is not None:
-        deltas = np.array([get_single_crop(delta, cent, model.input_shape[1]//2, crop_input_mask) for cent in crop_centers])
+        # deltas = np.array([get_single_crop_old(delta, cent, model.input_shape[1]//2, crop_input_mask) for cent in crop_centers])
+        deltas = np.array([get_single_crop(delta, np.array(cent), model.input_shape[1]//2) for cent in crop_centers])
         fields.append(deltas)
+        timer.logdt("Loaded fields: delta")
     if potential is not None:
-        potentials = np.array([get_single_crop(potential, cent, model.input_shape[1]//2, crop_input_mask) for cent in crop_centers])
+        # potentials = np.array([get_single_crop_old(potential, cent, model.input_shape[1]//2, crop_input_mask) for cent in crop_centers])
+        potentials = np.array([get_single_crop(potential, np.array(cent), model.input_shape[1]//2) for cent in crop_centers])
         fields.append(potentials)
+        timer.logdt("Loaded fields: potential")
     if semantic is not None:
-        semantics = np.array([get_single_crop(semantic, cent, model.input_shape[1]//2, crop_input_mask) for cent in crop_centers])
+        # semantics = np.array([get_single_crop_old(semantic, cent, model.input_shape[1]//2, crop_input_mask) for cent in crop_centers])
+        semantics = np.array([get_single_crop(semantic, np.array(cent), model.input_shape[1]//2) for cent in crop_centers])
         fields.append(semantics)
+        timer.logdt("Loaded fields: semantic")
     if append_lag_pos:
         qs = np.zeros(((ngrid // ngrid_out)**3,) + model.input_shape[1:4] + (3,))
-        
         qi = np.arange(0, model.input_shape[1], dtype=np.float32)
-        
         qs[...,0], qs[...,1], qs[...,2] = np.meshgrid(qi, qi, qi, indexing='ij')
-        
         fields.extend([qs[...,0], qs[...,1], qs[...,2]])
-
+        timer.logdt("Loaded fields: lag_pos")
+        
     fields = np.stack(fields, axis=-1)
     
     if fields.shape[-1] != model.input_shape[-1]:
         raise ValueError("Something went wrong with the input shapes not matching (maybe forgot potential?)", fields.shape, model.input_shape)
         
     if get_output_mask is not None:
-        mask = np.array([get_single_crop(get_output_mask, cent, model.output_shape[1]//2, crop_output_mask) for cent in crop_centers])
-        
+        # mask = np.array([get_single_crop_old(get_output_mask, cent, model.output_shape[1]//2, crop_output_mask) for cent in crop_centers])
+        mask = np.array([get_single_crop(get_output_mask, np.array(cent), model.output_shape[1]//2) for cent in crop_centers])
+        timer.logdt("Generated output_mask")
         return fields, mask
     else:
         return fields
@@ -121,11 +160,15 @@ def define_inputs_for_model(model, delta=None, potential=None, ngrid_out=64, off
 
 def reduce_labeling(data):
     uq, inv = np.unique(data, return_inverse=True)
+    assert uq[0] >= 0, ("negative label found %d " % uq[0])
+
     data = np.zeros_like(data)
     arange = np.arange(len(uq))
+    
     if uq[0] != 0:
         arange += 1
-    data.flat = arange[inv[:-1]]
+    data.flat = arange[inv]
+    
     return data
 
 # -------------------------------------------------------------------------------------------- #
@@ -157,13 +200,18 @@ def semantic_model_predictions(model, delta=None, potential=None, ngrid_out=64):
 
     fields = define_inputs_for_model(model, delta=delta, potential=potential, ngrid_out=ngrid_out)
     timer.logdt("Defined Inputs")
+
+    # semantics = model.predict(fields, batch_size=2)
+    semantics = np.zeros((fields.shape[0],) + model.output_shape[1:-1])
+    for ii in range(fields.shape[0]):
+        timer.logdt("Semantic crop "+str(ii+1)+"/"+str(fields.shape[0]))
+        semantics[ii:ii+1] = model.predict(fields[ii:ii+1], batch_size=1)[..., 0]
     
-    semantics = model.predict(fields, batch_size=2)[..., 0]
-    timer.logdt("Did Semantic Predictions")
+    timer.logdt("Finished Semantic Predictions")
     
     ngrid_mod = model.output_shape[1]
     lim = (ngrid_mod//2 - ngrid_out//2, ngrid_mod//2 + ngrid_out//2)
-
+    
     semantic = assemble_cube_grid(semantics[:, lim[0]:lim[1], lim[0]:lim[1], lim[0]:lim[1]])
     timer.logdt("Assembled outputs")
     
@@ -229,7 +277,7 @@ def fake_clustering(scatter_points):
     return np.random.randint(1,10, size=scatter_points.shape[0])
 
 def independent_crops_instance_model_predictions(model, semantic, delta=None, potential=None, ngrid_out=64, append_lag_pos=True, sem_thresh=0.589, offset=None, debug=False, cluster="meshfree", include_semantic_as_model_input=False, **kwargs):
-
+    
     if offset is None:
         offset = ngrid_out//2
     
@@ -243,8 +291,12 @@ def independent_crops_instance_model_predictions(model, semantic, delta=None, po
                                           ngrid_out=ngrid_out, append_lag_pos=append_lag_pos,
                                           get_output_mask=semantic>sem_thresh, offset=offset)
     timer.logdt("independent_crops_instance_model_predictions: Defined Inputs")
-
-    pseudos = model.predict(fields, batch_size=2)
+    
+    # pseudos = model.predict(fields, batch_size=2)
+    pseudos = np.zeros((fields.shape[0],) + model.output_shape[1:])
+    for ii in range(fields.shape[0]):
+        timer.logdt("Pseudo crop "+str(ii+1)+"/"+str(fields.shape[0]))
+        pseudos[ii:ii+1] = model.predict(fields[ii:ii+1], batch_size=1)
                 
     timer.logdt("independent_crops_instance_model_predictions: Predicted pseudo space")
     
@@ -256,6 +308,7 @@ def independent_crops_instance_model_predictions(model, semantic, delta=None, po
         imax = len(pseudos)
     
     for ii in range(0, imax):
+        timer.logdt("Clustering instance crop "+str(ii+1)+"/"+str(imax))
         if cluster == "fake":
             pred_crops[ii,mask[ii]] = fake_clustering(pseudos[ii,mask[ii]])
         elif cluster == "meshfree":
@@ -279,12 +332,17 @@ def independent_crops_instance_model_predictions(model, semantic, delta=None, po
 
 def combine_instance_labeled_lattices(labels1, labels2, combine_thresh=0.5, quadrant_size=32, unmerged_mode="size"):
     
+    timer = Timer()
+    
     nlabels1, nlabels2 = np.max(labels1)+1, np.max(labels2)+1
     
     # Create a Graph which defines which labels should be merged
+    timer.logdt("Start creating graph")
     G = nx.Graph()
     G.add_nodes_from(np.arange(nlabels1))
+    timer.logdt("Finish add_nodes_from nlabels1")
     G.add_nodes_from(nlabels1 + np.arange(nlabels2))
+    timer.logdt("Finish add_nodes_from nlabels2")
     
     ngrid = labels1.shape[0]
     
@@ -308,6 +366,7 @@ def combine_instance_labeled_lattices(labels1, labels2, combine_thresh=0.5, quad
                 G.add_edge(link[0], nlabels1+link[1])
     
     for i in range(0, ngrid//quadrant_size):
+        timer.logdt("link_quadrant i "+str(i+1)+"/"+str(ngrid//quadrant_size))
         for j in range(0, ngrid//quadrant_size):
             for k in range(0, ngrid//quadrant_size):
                 link_quadrant((i*quadrant_size,j*quadrant_size,k*quadrant_size), quadrant_size)

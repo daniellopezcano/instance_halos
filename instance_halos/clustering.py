@@ -53,6 +53,7 @@ def meshfree_descending_clustering(x, kdens=20, klink=15, min_pers_ratio=4.2, ke
     
     timer = Timer(log = logging.debug)
     rho, inn = sph_density(x, k=kdens, kernel=kernel, nthreads=nthreads, get_neighbors=True)
+    assert(inn >= 0, "Error inn < 0")
     inn = inn[:,:klink]
     timer.logdt("meshfree_descending_clustering: Estimated Density and Neighbors")
 
