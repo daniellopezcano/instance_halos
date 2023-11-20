@@ -22,7 +22,7 @@ conda activate VE_IHs
 conda install -c anaconda tensorflow-gpu
 pip install matplotlib scipy networkx cython jupyter gdown
 pip install numpy==1.23.5
-git clone git@github.com:daniellopezcano/instance_halos.git
+git clone https://github.com/daniellopezcano/instance_halos.git
 cd instance_halos
 pip install -e .
 gdown --folder https://drive.google.com/drive/folders/1MIG_km7KiSP5a75KtRaIeu6U5DcHuIyN?usp=drive_link
