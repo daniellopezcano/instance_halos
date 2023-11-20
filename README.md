@@ -12,7 +12,7 @@ The data employed to train and test the networks has been generated using l-gadg
 ## Code description
 The code is organized as follows:
 - The `utils_modules` folder contains the codes employed to load the dataset and the model. It also includes the codes employed for performing the pseudo-space clsutering, generate the model predictions, and carry out statistical analysis and plots.
-- The `example` folder contains an example Jupyter notebook (`example.ipynb`) to see how the models are able to generate predictions and plots similar to those presented in the paper.
+- The `example` folder contains two example Jupyter notebooks (`example.ipynb`, `step_by_step.ipynb`) to see how the models are able to generate predictions and plots similar to those presented in the paper.
 - After cloning the huggingface repositiores (see installation instructions below) the folder named `instance_halos_data` will contain .npy files used as example inputs for the networks (also the ground truth predictions). The `instance_halos_models` folder will contain the semantic and instance models stored in a format compatible with tensorflow.
 
 ## installation modules
@@ -28,6 +28,7 @@ pip install -e .
 gdown --folder https://drive.google.com/drive/folders/1MIG_km7KiSP5a75KtRaIeu6U5DcHuIyN?usp=drive_link
 gdown --folder https://drive.google.com/drive/folders/1YP3wtWEX_4mZPr1N2erRW8OfHU7nmkfW?usp=share_link
 ```
+We had problems using newer numpy versions along with tensorflow-gpu. We recommend employing nmpy v=1.23.5 to avoid these conflicts.
 
 #### profiling
 To see the log put:
